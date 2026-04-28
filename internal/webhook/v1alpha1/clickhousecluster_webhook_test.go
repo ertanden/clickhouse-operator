@@ -24,7 +24,7 @@ var _ = Describe("ClickHouseCluster Webhook", func() {
 					Name:      "test-default",
 				},
 				Spec: chv1.ClickHouseClusterSpec{
-					KeeperClusterRef: &chv1.KeeperClusterReference{
+					KeeperClusterRef: chv1.KeeperClusterReference{
 						Name: "some-keeper-cluster",
 					},
 				},
@@ -47,7 +47,7 @@ var _ = Describe("ClickHouseCluster Webhook", func() {
 					Name:      "test-default",
 				},
 				Spec: chv1.ClickHouseClusterSpec{
-					KeeperClusterRef: &chv1.KeeperClusterReference{
+					KeeperClusterRef: chv1.KeeperClusterReference{
 						Name: "some-keeper-cluster",
 					},
 					DataVolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{Resources: corev1.VolumeResourceRequirements{
@@ -73,7 +73,7 @@ var _ = Describe("ClickHouseCluster Webhook", func() {
 				Name:      "test-validate",
 			},
 			Spec: chv1.ClickHouseClusterSpec{
-				KeeperClusterRef: &chv1.KeeperClusterReference{
+				KeeperClusterRef: chv1.KeeperClusterReference{
 					Name: "some-keeper-cluster",
 				},
 			},
@@ -107,7 +107,7 @@ var _ = Describe("ClickHouseCluster Webhook", func() {
 
 			err := k8sClient.Create(ctx, cluster)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("keeperClusterRef namespace"))
+			Expect(err.Error()).To(ContainSubstring("keeperClusterRef.namespace"))
 		})
 
 		It("Should check certificate passed if TLS enabled", func(ctx context.Context) {

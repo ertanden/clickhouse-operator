@@ -34,7 +34,7 @@ type ClickHouseClusterSpec struct {
 	// Reference to the KeeperCluster that is used for ClickHouse coordination.
 	// When namespace is omitted, the ClickHouseCluster namespace is used.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Keeper Cluster Reference"
-	KeeperClusterRef *KeeperClusterReference `json:"keeperClusterRef"`
+	KeeperClusterRef KeeperClusterReference `json:"keeperClusterRef"`
 
 	// Parameters passed to the ClickHouse pod spec.
 	// +optional
@@ -210,9 +210,13 @@ type ClickHouseClusterStatus struct {
 // KeeperClusterReference identifies the KeeperCluster used by a ClickHouseCluster.
 type KeeperClusterReference struct {
 	// Name of the KeeperCluster resource.
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength=63
 	Name string `json:"name"`
 	// Namespace of the KeeperCluster resource.
 	// When omitted, the ClickHouseCluster namespace is used.
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:MaxLength=63
 	// +optional
 	Namespace string `json:"namespace,omitempty"`
 }

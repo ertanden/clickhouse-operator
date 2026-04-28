@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
-	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -90,20 +88,6 @@ func (w *ClickHouseClusterWebhook) validateImpl(obj *chv1.ClickHouseCluster) (ad
 		warns admission.Warnings
 		errs  []error
 	)
-
-	if obj.Spec.KeeperClusterRef == nil || obj.Spec.KeeperClusterRef.Name == "" {
-		errs = append(errs, errors.New("keeperClusterRef name must not be empty"))
-	}
-
-	if obj.Spec.KeeperClusterRef != nil && obj.Spec.KeeperClusterRef.Namespace != "" {
-		if validationErrs := validation.IsDNS1123Label(obj.Spec.KeeperClusterRef.Namespace); len(validationErrs) > 0 {
-			errs = append(errs, fmt.Errorf(
-				"keeperClusterRef namespace %q is invalid: %s",
-				obj.Spec.KeeperClusterRef.Namespace,
-				strings.Join(validationErrs, ", "),
-			))
-		}
-	}
 
 	if err := obj.Spec.Settings.TLS.Validate(); err != nil {
 		errs = append(errs, err)

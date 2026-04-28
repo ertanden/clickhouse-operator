@@ -40,65 +40,6 @@ func TestControllers(t *testing.T) {
 	RunSpecs(t, "ClickHouse Controller Suite")
 }
 
-var _ = Describe("keeper watch mapping", func() {
-	It("should enqueue ClickHouse clusters that explicitly reference a keeper in another namespace", func(ctx context.Context) {
-		testScheme := k8sruntime.NewScheme()
-		Expect(clientgoscheme.AddToScheme(testScheme)).To(Succeed())
-		Expect(v1.AddToScheme(testScheme)).To(Succeed())
-
-		referencedCluster := &v1.ClickHouseCluster{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "cross-namespace-cluster",
-				Namespace: "clickhouse-ns",
-			},
-			Spec: v1.ClickHouseClusterSpec{
-				KeeperClusterRef: &v1.KeeperClusterReference{
-					Name:      "keeper",
-					Namespace: "keeper-ns",
-				},
-			},
-		}
-		sameNameDifferentNamespace := &v1.ClickHouseCluster{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "same-name-different-namespace",
-				Namespace: "other-ns",
-			},
-			Spec: v1.ClickHouseClusterSpec{
-				KeeperClusterRef: &v1.KeeperClusterReference{
-					Name: "keeper",
-				},
-			},
-		}
-
-		controller := &ClusterController{
-			Client: fake.NewClientBuilder().
-				WithScheme(testScheme).
-				WithObjects(referencedCluster, sameNameDifferentNamespace).
-				WithIndex(&v1.ClickHouseCluster{}, keeperClusterReferenceField, func(obj client.Object) []string {
-					cluster, ok := obj.(*v1.ClickHouseCluster)
-					if !ok {
-						return nil
-					}
-
-					return keeperReferenceFieldValue(cluster)
-				}).
-				Build(),
-		}
-
-		Expect(controller.clickHouseClustersForKeeper(ctx, &v1.KeeperCluster{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "keeper",
-				Namespace: "keeper-ns",
-			},
-		})).To(ConsistOf(reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      referencedCluster.Name,
-				Namespace: referencedCluster.Namespace,
-			},
-		}))
-	})
-})
-
 var _ = When("reconciling ClickHouseCluster", Ordered, func() {
 	var (
 		suite        testutil.TestSuit
@@ -119,7 +60,7 @@ var _ = When("reconciling ClickHouseCluster", Ordered, func() {
 			Spec: v1.ClickHouseClusterSpec{
 				Replicas:         new(int32(2)),
 				Shards:           new(int32(2)),
-				KeeperClusterRef: &v1.KeeperClusterReference{Name: keeperName},
+				KeeperClusterRef: v1.KeeperClusterReference{Name: keeperName},
 				Labels: map[string]string{
 					"test-label": "test-val",
 				},
@@ -254,7 +195,7 @@ var _ = When("reconciling ClickHouseCluster", Ordered, func() {
 			Spec: v1.ClickHouseClusterSpec{
 				Replicas: new(int32(1)),
 				Shards:   new(int32(1)),
-				KeeperClusterRef: &v1.KeeperClusterReference{
+				KeeperClusterRef: v1.KeeperClusterReference{
 					Name:      keeper.Name,
 					Namespace: keeper.Namespace,
 				},
@@ -565,7 +506,7 @@ var _ = When("reconciling ClickHouseCluster", Ordered, func() {
 			Spec: v1.ClickHouseClusterSpec{
 				Replicas:         new(int32(2)),
 				Shards:           new(int32(1)),
-				KeeperClusterRef: &v1.KeeperClusterReference{Name: keeperName},
+				KeeperClusterRef: v1.KeeperClusterReference{Name: keeperName},
 				DataVolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
 					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 					Resources: corev1.VolumeResourceRequirements{
@@ -669,7 +610,7 @@ var _ = When("reconciling ClickHouseCluster", Ordered, func() {
 				Namespace: "default",
 			},
 			Spec: v1.ClickHouseClusterSpec{
-				KeeperClusterRef: &v1.KeeperClusterReference{Name: keeperName},
+				KeeperClusterRef: v1.KeeperClusterReference{Name: keeperName},
 				ExternalSecret: &v1.ExternalSecret{
 					Name: secret.Name,
 				},
@@ -727,5 +668,64 @@ var _ = When("reconciling ClickHouseCluster", Ordered, func() {
 		Expect(suite.Client.Get(ctx, client.ObjectKeyFromObject(&secret), &secret)).To(Succeed())
 		Expect(secret.Data).To(HaveKey(SecretKeyManagementPassword))
 		Expect(secret.Data).To(HaveKey(SecretKeyClusterSecret))
+	})
+})
+
+var _ = Describe("keeper watch mapping", func() {
+	It("should enqueue ClickHouse clusters that explicitly reference a keeper in another namespace", func(ctx context.Context) {
+		testScheme := k8sruntime.NewScheme()
+		Expect(clientgoscheme.AddToScheme(testScheme)).To(Succeed())
+		Expect(v1.AddToScheme(testScheme)).To(Succeed())
+
+		referencedCluster := &v1.ClickHouseCluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "cross-namespace-cluster",
+				Namespace: "clickhouse-ns",
+			},
+			Spec: v1.ClickHouseClusterSpec{
+				KeeperClusterRef: v1.KeeperClusterReference{
+					Name:      "keeper",
+					Namespace: "keeper-ns",
+				},
+			},
+		}
+		sameNameDifferentNamespace := &v1.ClickHouseCluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "same-name-different-namespace",
+				Namespace: "other-ns",
+			},
+			Spec: v1.ClickHouseClusterSpec{
+				KeeperClusterRef: v1.KeeperClusterReference{
+					Name: "keeper",
+				},
+			},
+		}
+
+		controller := &ClusterController{
+			Client: fake.NewClientBuilder().
+				WithScheme(testScheme).
+				WithObjects(referencedCluster, sameNameDifferentNamespace).
+				WithIndex(&v1.ClickHouseCluster{}, keeperClusterReferenceField, func(obj client.Object) []string {
+					cluster, ok := obj.(*v1.ClickHouseCluster)
+					if !ok {
+						return nil
+					}
+
+					return keeperReferenceFieldValue(cluster)
+				}).
+				Build(),
+		}
+
+		Expect(controller.clickHouseClustersForKeeper(ctx, &v1.KeeperCluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "keeper",
+				Namespace: "keeper-ns",
+			},
+		})).To(ConsistOf(reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      referencedCluster.Name,
+				Namespace: referencedCluster.Namespace,
+			},
+		}))
 	})
 })

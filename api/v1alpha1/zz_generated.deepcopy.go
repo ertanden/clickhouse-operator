@@ -100,11 +100,7 @@ func (in *ClickHouseClusterSpec) DeepCopyInto(out *ClickHouseClusterSpec) {
 		*out = new(int32)
 		**out = **in
 	}
-	if in.KeeperClusterRef != nil {
-		in, out := &in.KeeperClusterRef, &out.KeeperClusterRef
-		*out = new(KeeperClusterReference)
-		**out = **in
-	}
+	out.KeeperClusterRef = in.KeeperClusterRef
 	in.PodTemplate.DeepCopyInto(&out.PodTemplate)
 	in.ContainerTemplate.DeepCopyInto(&out.ContainerTemplate)
 	if in.DataVolumeClaimSpec != nil {

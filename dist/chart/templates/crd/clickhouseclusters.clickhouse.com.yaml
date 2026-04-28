@@ -1122,11 +1122,15 @@ spec:
                 properties:
                   name:
                     description: Name of the KeeperCluster resource.
+                    maxLength: 63
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
                   namespace:
                     description: |-
                       Namespace of the KeeperCluster resource.
                       When omitted, the ClickHouseCluster namespace is used.
+                    maxLength: 63
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                     type: string
                 required:
                 - name

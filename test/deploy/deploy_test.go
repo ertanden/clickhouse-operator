@@ -376,7 +376,7 @@ func testDeployment(namespace string) {
 			},
 			Spec: v1.ClickHouseClusterSpec{
 				Replicas: new(int32(1)),
-				KeeperClusterRef: &v1.KeeperClusterReference{
+				KeeperClusterRef: v1.KeeperClusterReference{
 					Name: keeper.Name,
 				},
 				ContainerTemplate: v1.ContainerTemplateSpec{
